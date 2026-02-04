@@ -1,0 +1,67 @@
+parameters:
+    drupalRules:
+        # Toggle individual rules. Useful while gradually adopting the package.
+        noServiceLocatorInDIClass: true
+        hookImplementationSignature: true
+        noDeprecatedEntityApi: true
+        noEntityQueryWithoutAccessCheck: true
+
+        # Base classes that imply DI is wired up. Calling \Drupal::service()
+        # from inside a subclass of one of these is considered a code smell.
+        diBaseClasses:
+            - Drupal\Core\Controller\ControllerBase
+            - Drupal\Core\Form\FormBase
+            - Drupal\Core\Form\ConfigFormBase
+            - Drupal\Core\Block\BlockBase
+            - Drupal\Core\Condition\ConditionPluginBase
+            - Drupal\Core\Field\FormatterBase
+            - Drupal\Core\Field\WidgetBase
+            - Drupal\Core\Plugin\PluginBase
+
+        # Static-call locator method names on \Drupal that are forbidden inside DI-aware classes.
+        forbiddenLocatorMethods:
+            - service
+            - config
+            - entityTypeManager
+            - entityQuery
+            - entityFieldManager
+            - currentUser
+            - logger
+            - state
+            - cache
+            - database
+            - moduleHandler
+            - messenger
+            - requestStack
+            - languageManager
+
+services:
+    -
+        class: YourOrg\PhpStanDrupalRules\Rules\NoServiceLocatorInDIClassRule
+        arguments:
+            diBaseClasses: %drupalRules.diBaseClasses%
+            forbiddenLocatorMethods: %drupalRules.forbiddenLocatorMethods%
+            enabled: %drupalRules.noServiceLocatorInDIClass%
+        tags:
+            - phpstan.rules.rule
+
+    -
+        class: YourOrg\PhpStanDrupalRules\Rules\HookImplementationSignatureRule
+        arguments:
+            enabled: %drupalRules.hookImplementationSignature%
+        tags:
+            - phpstan.rules.rule
+
+    -
+        class: YourOrg\PhpStanDrupalRules\Rules\NoDeprecatedEntityApiRule
+        arguments:
+            enabled: %drupalRules.noDeprecatedEntityApi%
+        tags:
+            - phpstan.rules.rule
+
+    -
+        class: YourOrg\PhpStanDrupalRules\Rules\NoEntityQueryWithoutAccessCheckRule
+        arguments:
+            enabled: %drupalRules.noEntityQueryWithoutAccessCheck%
+        tags:
+            - phpstan.rules.rule
