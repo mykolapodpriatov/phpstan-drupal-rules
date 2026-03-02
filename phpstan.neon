@@ -4,3 +4,13 @@ parameters:
         - src
     tmpDir: .phpstan-cache
     treatPhpDocTypesAsCertain: false
+    reportUnmatchedIgnoredErrors: true
+    checkMissingIterableValueType: true
+    checkGenericClassInNonGenericObjectType: true
+    # The rule entries each define a $node parameter as Node, so PHPStan reports
+    # the "more specific type" hint. That is by design — the Rule interface
+    # mandates the wider type. Suppress the noise from those entrypoints only.
+    ignoreErrors:
+        -
+            message: '#Parameter \#1 \$node \(PhpParser\\Node\) of method .+::processNode\(\) should be compatible with parameter \$node#'
+            path: src/Rules/*.php
