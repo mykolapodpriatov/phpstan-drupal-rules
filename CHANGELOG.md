@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `NoDeprecatedEntityApiRule` flagging `entity_load`, `node_load`, `drupal_render`, `drupal_set_message`, `\Drupal::entityManager()` and friends with concrete replacement suggestions.
 - `NoEntityQueryWithoutAccessCheckRule` requiring an explicit `->accessCheck()` call on every `entityQuery()` / `getQuery()` chain (Drupal 10+ requirement).
 - Dogfooded PHPStan configuration at level 8 plus GitHub Actions CI matrix (PHP 8.3 / 8.4 × PHPStan ^1.11 / ^2.0).
+- README with bad/good code samples for every rule, configuration reference and a roadmap section.
 
 ## [0.1.0] - TBD
 
