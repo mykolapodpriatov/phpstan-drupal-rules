@@ -7,15 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-06-22
+
 ### Added
-- Initial PHPStan extension skeleton with composer.json, extension.neon, MIT license and PSR-4 autoload.
+- Initial PHPStan extension skeleton with `composer.json`, `extension.neon`, MIT license and PSR-4 autoload.
 - `NoServiceLocatorInDIClassRule` flagging `\Drupal::service()` and friends inside DI-aware classes.
 - `HookImplementationSignatureRule` with a curated hook signature map covering form, entity, node access, views, theme and module lifecycle hooks.
 - `NoDeprecatedEntityApiRule` flagging `entity_load`, `node_load`, `drupal_render`, `drupal_set_message`, `\Drupal::entityManager()` and friends with concrete replacement suggestions.
 - `NoEntityQueryWithoutAccessCheckRule` requiring an explicit `->accessCheck()` call on every `entityQuery()` / `getQuery()` chain (Drupal 10+ requirement).
-- Dogfooded PHPStan configuration at level 8 plus GitHub Actions CI matrix (PHP 8.3 / 8.4 × PHPStan ^1.11 / ^2.0).
+- `ChainParentVisitor`, registered via `phpstan.parser.richParserNodeVisitor`, supplying the parent links the entity-query rule needs on PHPStan 2.x (which no longer connects nodes by default).
+- Dogfooded PHPStan configuration at level 8 plus a GitHub Actions CI matrix (PHP 8.3 / 8.4).
 - README with bad/good code samples for every rule, configuration reference and a roadmap section.
 
-## [0.1.0] - TBD
+### Notes
+- Targets PHPStan `^2.0` and `mglaman/phpstan-drupal` `^2.0`. The full test suite and the level-8 self-analysis are green on this baseline.
 
-- First tagged release once the rule set stabilises.
+[Unreleased]: https://github.com/mykolapodpriatov/phpstan-drupal-rules/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/mykolapodpriatov/phpstan-drupal-rules/releases/tag/v0.1.0

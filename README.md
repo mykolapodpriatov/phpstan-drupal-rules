@@ -1,6 +1,6 @@
 # phpstan-drupal-rules
 
-[![CI](https://github.com/your-org/phpstan-drupal-rules/actions/workflows/ci.yml/badge.svg)](https://github.com/your-org/phpstan-drupal-rules/actions/workflows/ci.yml)
+[![CI](https://github.com/mykolapodpriatov/phpstan-drupal-rules/actions/workflows/ci.yml/badge.svg)](https://github.com/mykolapodpriatov/phpstan-drupal-rules/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 Opinionated PHPStan rules for Drupal 10.3+/11 codebases. Layers on top of
@@ -14,14 +14,14 @@ deprecated entity APIs, and unsafe `entityQuery()` calls.
 | Package | Version |
 | --- | --- |
 | PHP | `^8.3` |
-| `phpstan/phpstan` | `^1.11` or `^2.0` |
-| `mglaman/phpstan-drupal` | `^1.3` or `^2.0` |
+| `phpstan/phpstan` | `^2.0` |
+| `mglaman/phpstan-drupal` | `^2.0` |
 | Drupal core (target codebase) | `10.3+` or `11.x` |
 
 ## Installation
 
 ```bash
-composer require --dev your-org/phpstan-drupal-rules
+composer require --dev mykolapodpriatov/phpstan-drupal-rules
 ```
 
 If you use [`phpstan/extension-installer`](https://github.com/phpstan/extension-installer)
@@ -32,7 +32,7 @@ project's `phpstan.neon`:
 includes:
     - vendor/mglaman/phpstan-drupal/extension.neon
     - vendor/mglaman/phpstan-drupal/rules.neon
-    - vendor/your-org/phpstan-drupal-rules/extension.neon
+    - vendor/mykolapodpriatov/phpstan-drupal-rules/extension.neon
 ```
 
 ## Configuration
@@ -187,4 +187,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
-[MIT](LICENSE) © 2026 Your Org
+[MIT](LICENSE) © 2026 Mykola Podpriatov
