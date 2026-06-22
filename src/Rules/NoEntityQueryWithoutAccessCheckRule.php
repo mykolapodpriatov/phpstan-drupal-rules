@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace YourOrg\PhpStanDrupalRules\Rules;
+namespace MykolaPodpriatov\PhpStanDrupalRules\Rules;
 
+use MykolaPodpriatov\PhpStanDrupalRules\NodeVisitor\ChainParentVisitor;
 use PhpParser\Node;
 use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\StaticCall;
@@ -21,8 +22,10 @@ use PHPStan\Rules\RuleErrorBuilder;
  *
  * Strategy:
  *  We only look at MethodCall nodes that are the *tail* of a chain (i.e. their
- *  parent is not another method call on them). From the tail we walk down the
- *  receivers and collect method names. If the deepest receiver is
+ *  parent is not another method call on them). The parent link comes from our
+ *  own {@see ChainParentVisitor}, registered via the rich-parser visitor tag,
+ *  because PHPStan 2.x no longer connects nodes by default. From the tail we
+ *  walk down the receivers and collect method names. If the deepest receiver is
  *  `entityQuery()` (a static call on \Drupal) or `getQuery()` (called on an
  *  entity storage), and the chain does not contain `accessCheck`, we report.
  *
@@ -53,7 +56,7 @@ final class NoEntityQueryWithoutAccessCheckRule implements Rule
 
         // Only consider the chain tail — when this node is itself the receiver
         // of an outer call we let that outer call do the reporting instead.
-        $parent = $node->getAttribute('parent');
+        $parent = $node->getAttribute(ChainParentVisitor::ATTRIBUTE);
         if ($parent instanceof MethodCall && $parent->var === $node) {
             return [];
         }
@@ -88,14 +91,15 @@ final class NoEntityQueryWithoutAccessCheckRule implements Rule
     {
         $names = [];
         $current = $node;
-        while ($current instanceof MethodCall) {
+        while (true) {
             if ($current->name instanceof Identifier) {
                 $names[] = $current->name->toString();
             }
-            $current = $current->var instanceof MethodCall ? $current->var : null;
-            if ($current === null) {
+            $receiver = $current->var;
+            if (!$receiver instanceof MethodCall) {
                 break;
             }
+            $current = $receiver;
         }
         return $names;
     }
@@ -106,11 +110,11 @@ final class NoEntityQueryWithoutAccessCheckRule implements Rule
     private function chainRoot(MethodCall $node): Node
     {
         $current = $node;
-        while ($current instanceof MethodCall && $current->var instanceof MethodCall) {
+        while ($current->var instanceof MethodCall) {
             $current = $current->var;
         }
         // $current is a MethodCall whose ->var is *not* another MethodCall.
-        return $current instanceof MethodCall ? $current->var : $current;
+        return $current->var;
     }
 
     /**

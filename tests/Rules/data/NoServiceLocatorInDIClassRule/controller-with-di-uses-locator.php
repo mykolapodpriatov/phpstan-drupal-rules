@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace YourOrg\PhpStanDrupalRules\Tests\Fixtures\NoServiceLocatorInDIClassRule;
+namespace MykolaPodpriatov\PhpStanDrupalRules\Tests\Fixtures\NoServiceLocatorInDIClassRule;
 
 use Drupal\Core\Controller\ControllerBase;
 

@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace YourOrg\PhpStanDrupalRules\Tests\Rules;
+namespace MykolaPodpriatov\PhpStanDrupalRules\Tests\Rules;
 
 use PHPStan\Rules\Rule;
 use PHPStan\Testing\RuleTestCase;
-use YourOrg\PhpStanDrupalRules\Rules\NoEntityQueryWithoutAccessCheckRule;
+use MykolaPodpriatov\PhpStanDrupalRules\Rules\NoEntityQueryWithoutAccessCheckRule;
 
 /**
  * @extends RuleTestCase<NoEntityQueryWithoutAccessCheckRule>
@@ -17,6 +17,16 @@ final class NoEntityQueryWithoutAccessCheckRuleTest extends RuleTestCase
     protected function getRule(): Rule
     {
         return new NoEntityQueryWithoutAccessCheckRule(enabled: true);
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function getAdditionalConfigFiles(): array
+    {
+        // Registers ChainParentVisitor so `chainParent` attributes are set
+        // during analysis — exactly as the shipped extension.neon does.
+        return [__DIR__ . '/../rules.neon'];
     }
 
     public function testMissingAccessCheckIsFlagged(): void

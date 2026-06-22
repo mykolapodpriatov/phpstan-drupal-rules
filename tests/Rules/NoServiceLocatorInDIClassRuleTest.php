@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace YourOrg\PhpStanDrupalRules\Tests\Rules;
+namespace MykolaPodpriatov\PhpStanDrupalRules\Tests\Rules;
 
 use PHPStan\Rules\Rule;
 use PHPStan\Testing\RuleTestCase;
-use YourOrg\PhpStanDrupalRules\Rules\NoServiceLocatorInDIClassRule;
+use MykolaPodpriatov\PhpStanDrupalRules\Rules\NoServiceLocatorInDIClassRule;
 
 /**
  * @extends RuleTestCase<NoServiceLocatorInDIClassRule>
@@ -50,12 +50,12 @@ final class NoServiceLocatorInDIClassRuleTest extends RuleTestCase
             [__DIR__ . '/data/NoServiceLocatorInDIClassRule/controller-with-di-uses-locator.php'],
             [
                 [
-                    'Use of service locator \Drupal::config() inside DI-aware class YourOrg\PhpStanDrupalRules\Tests\Fixtures\NoServiceLocatorInDIClassRule\BadController. Inject the service via constructor.',
-                    17,
+                    'Use of service locator \Drupal::config() inside DI-aware class MykolaPodpriatov\PhpStanDrupalRules\Tests\Fixtures\NoServiceLocatorInDIClassRule\BadController. Inject the service via constructor.',
+                    18,
                 ],
                 [
-                    'Use of service locator \Drupal::service() inside DI-aware class YourOrg\PhpStanDrupalRules\Tests\Fixtures\NoServiceLocatorInDIClassRule\BadController. Inject the service via constructor.',
-                    20,
+                    'Use of service locator \Drupal::service() inside DI-aware class MykolaPodpriatov\PhpStanDrupalRules\Tests\Fixtures\NoServiceLocatorInDIClassRule\BadController. Inject the service via constructor.',
+                    21,
                 ],
             ],
         );

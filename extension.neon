@@ -37,7 +37,7 @@ parameters:
 
 services:
     -
-        class: YourOrg\PhpStanDrupalRules\Rules\NoServiceLocatorInDIClassRule
+        class: MykolaPodpriatov\PhpStanDrupalRules\Rules\NoServiceLocatorInDIClassRule
         arguments:
             diBaseClasses: %drupalRules.diBaseClasses%
             forbiddenLocatorMethods: %drupalRules.forbiddenLocatorMethods%
@@ -46,22 +46,30 @@ services:
             - phpstan.rules.rule
 
     -
-        class: YourOrg\PhpStanDrupalRules\Rules\HookImplementationSignatureRule
+        class: MykolaPodpriatov\PhpStanDrupalRules\Rules\HookImplementationSignatureRule
         arguments:
             enabled: %drupalRules.hookImplementationSignature%
         tags:
             - phpstan.rules.rule
 
     -
-        class: YourOrg\PhpStanDrupalRules\Rules\NoDeprecatedEntityApiRule
+        class: MykolaPodpriatov\PhpStanDrupalRules\Rules\NoDeprecatedEntityApiRule
         arguments:
             enabled: %drupalRules.noDeprecatedEntityApi%
         tags:
             - phpstan.rules.rule
 
     -
-        class: YourOrg\PhpStanDrupalRules\Rules\NoEntityQueryWithoutAccessCheckRule
+        class: MykolaPodpriatov\PhpStanDrupalRules\Rules\NoEntityQueryWithoutAccessCheckRule
         arguments:
             enabled: %drupalRules.noEntityQueryWithoutAccessCheck%
         tags:
             - phpstan.rules.rule
+
+    # Supplies parent links (the `chainParent` attribute) the entity-query rule
+    # needs to find the tail of a fluent call. PHPStan 2.x stopped connecting
+    # nodes by default, so we register our own visitor on the rich parser.
+    -
+        class: MykolaPodpriatov\PhpStanDrupalRules\NodeVisitor\ChainParentVisitor
+        tags:
+            - phpstan.parser.richParserNodeVisitor
