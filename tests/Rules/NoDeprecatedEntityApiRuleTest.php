@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace YourOrg\PhpStanDrupalRules\Tests\Rules;
+namespace MykolaPodpriatov\PhpStanDrupalRules\Tests\Rules;
 
 use PHPStan\Rules\Rule;
 use PHPStan\Testing\RuleTestCase;
-use YourOrg\PhpStanDrupalRules\Rules\NoDeprecatedEntityApiRule;
+use MykolaPodpriatov\PhpStanDrupalRules\Rules\NoDeprecatedEntityApiRule;
 
 /**
  * @extends RuleTestCase<NoDeprecatedEntityApiRule>

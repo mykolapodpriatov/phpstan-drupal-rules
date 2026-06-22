@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace YourOrg\PhpStanDrupalRules\Tests\Fixtures\NoDeprecatedEntityApiRule;
+namespace MykolaPodpriatov\PhpStanDrupalRules\Tests\Fixtures\NoDeprecatedEntityApiRule;
 
 function modern_examples(int $nid, int $uid): void
 {

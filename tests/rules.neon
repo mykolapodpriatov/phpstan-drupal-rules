@@ -1,0 +1,11 @@
+# Test-only PHPStan config.
+#
+# RuleTestCase builds its own analyser and provides the rule under test through
+# getRule(), so we must NOT register the rule services here (that would double
+# the reported errors). We only need the rich-parser visitor that supplies the
+# `chainParent` attribute the entity-query rule relies on.
+services:
+    -
+        class: MykolaPodpriatov\PhpStanDrupalRules\NodeVisitor\ChainParentVisitor
+        tags:
+            - phpstan.parser.richParserNodeVisitor

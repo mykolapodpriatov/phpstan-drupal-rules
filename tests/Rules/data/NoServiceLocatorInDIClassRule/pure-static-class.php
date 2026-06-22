@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace YourOrg\PhpStanDrupalRules\Tests\Fixtures\NoServiceLocatorInDIClassRule;
+namespace MykolaPodpriatov\PhpStanDrupalRules\Tests\Fixtures\NoServiceLocatorInDIClassRule;
 
 /**
  * A small utility class with no DI plumbing — locator calls are tolerated here.

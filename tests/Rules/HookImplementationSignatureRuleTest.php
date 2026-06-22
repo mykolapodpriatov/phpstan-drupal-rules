@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace YourOrg\PhpStanDrupalRules\Tests\Rules;
+namespace MykolaPodpriatov\PhpStanDrupalRules\Tests\Rules;
 
 use PHPStan\Rules\Rule;
 use PHPStan\Testing\RuleTestCase;
-use YourOrg\PhpStanDrupalRules\Rules\HookImplementationSignatureRule;
+use MykolaPodpriatov\PhpStanDrupalRules\Rules\HookImplementationSignatureRule;
 
 /**
  * @extends RuleTestCase<HookImplementationSignatureRule>

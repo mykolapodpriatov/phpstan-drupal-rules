@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace YourOrg\PhpStanDrupalRules\Rules;
+namespace MykolaPodpriatov\PhpStanDrupalRules\Rules;
 
 use PhpParser\Node;
 use PhpParser\Node\Stmt\Function_;
