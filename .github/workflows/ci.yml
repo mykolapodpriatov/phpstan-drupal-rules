@@ -42,3 +42,6 @@ jobs:
 
       - name: Dogfood PHPStan on this codebase
         run: vendor/bin/phpstan analyse --memory-limit=512M --no-progress --error-format=github
+
+      - name: Validate baseline.neon
+        run: vendor/bin/phpstan analyse -c baseline.neon tests/baseline-fixture --memory-limit=512M --no-progress --error-format=github

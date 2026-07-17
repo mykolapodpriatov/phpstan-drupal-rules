@@ -1,0 +1,41 @@
+# baseline.neon — migration-friendly defaults for adopting phpstan-drupal-rules.
+#
+# Drop this into an existing (legacy) codebase to start with just the two
+# low-noise, high-signal rules and switch the rest on one at a time. Pull it
+# into your own config with:
+#
+#     includes:
+#         - vendor/mykolapodpriatov/phpstan-drupal-rules/baseline.neon
+#
+# then set your own `level` and `paths` (or keep the level: 0 floor below,
+# which is enough for the Drupal rules — they run at every level). See the
+# "Gradual adoption" section of the README for the recommended ramp-up order.
+includes:
+    - extension.neon
+
+parameters:
+    # A safe floor so `phpstan analyse -c baseline.neon <paths>` runs on its
+    # own. Your project config can raise this — a scalar in the including file
+    # overrides the value from an include.
+    level: 0
+
+    drupalRules:
+        # ── ON: low-noise, high-signal. Adopt these first. ──────────────────
+        # A missing accessCheck() throws at runtime on Drupal 10+, so every hit
+        # is a real bug rather than a style opinion.
+        noEntityQueryWithoutAccessCheck: true
+        # Deprecated/removed entity APIs — each finding is a concrete, mechanical
+        # fix with an obvious modern replacement.
+        noDeprecatedEntityApi: true
+
+        # ── OFF: ramp these up once the two rules above are clean. ───────────
+        # Step 2 — DI hygiene. Higher volume and more opinionated; flip it on
+        # after the quick wins above have landed.
+        noServiceLocatorInDIClass: false
+        # Step 3 — hook signatures. Enable last, once your hooks have been
+        # audited against the current core signatures.
+        hookImplementationSignature: false
+        # Permission-constant promotion is a code-quality nudge rather than a
+        # correctness fix; keep it off for the initial migration and turn it on
+        # alongside step 2/3 when you are ready to tidy access checks.
+        properPermissionConstants: false

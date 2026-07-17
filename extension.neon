@@ -42,6 +42,21 @@ parameters:
             - requestStack
             - languageManager
 
+# Declare the shape of the custom `drupalRules` parameter so PHPStan accepts it
+# when a project includes this extension (or the shipped baseline.neon) from its
+# own phpstan.neon.
+parametersSchema:
+    drupalRules: structure([
+        noServiceLocatorInDIClass: bool()
+        hookImplementationSignature: bool()
+        noDeprecatedEntityApi: bool()
+        noEntityQueryWithoutAccessCheck: bool()
+        properPermissionConstants: bool()
+        allowedPermissionStrings: listOf(string())
+        diBaseClasses: listOf(string())
+        forbiddenLocatorMethods: listOf(string())
+    ])
+
 services:
     -
         class: MykolaPodpriatov\PhpStanDrupalRules\Rules\NoServiceLocatorInDIClassRule

@@ -55,6 +55,46 @@ You can also tune the DI-aware base class list, the set of forbidden
 `ProperPermissionConstantsRule` is allowed to ignore — see `extension.neon`
 for the full set of knobs.
 
+## Gradual adoption
+
+Turning every rule on at once against a legacy codebase can bury the signal
+under hundreds of findings. The package ships a `baseline.neon` that enables
+only the two low-noise, high-signal rules and leaves the rest off, so you can
+ramp up one rule at a time. Include it instead of `extension.neon`:
+
+```neon
+includes:
+    - vendor/mglaman/phpstan-drupal/extension.neon
+    - vendor/mglaman/phpstan-drupal/rules.neon
+    - vendor/mykolapodpriatov/phpstan-drupal-rules/baseline.neon
+
+parameters:
+    level: 6
+    paths:
+        - web/modules/custom
+```
+
+`baseline.neon` starts here:
+
+| Rule | State | Why |
+| --- | --- | --- |
+| `noEntityQueryWithoutAccessCheck` | **on** | A missing `accessCheck()` throws at runtime on Drupal 10+ — always a real bug. |
+| `noDeprecatedEntityApi` | **on** | Each hit is a concrete, mechanical fix with an obvious replacement. |
+| `noServiceLocatorInDIClass` | off | DI hygiene — higher volume and more opinionated. |
+| `hookImplementationSignature` | off | Signature drift — enable once hooks are audited. |
+| `properPermissionConstants` | off | Code-quality nudge rather than a correctness fix. |
+
+Recommended sequence — get each step to green before moving on:
+
+1. Adopt `baseline.neon` and clear the two enabled rules.
+2. Flip `noServiceLocatorInDIClass: true` and inject the flagged locators.
+3. Flip `hookImplementationSignature: true` and fix the hook signatures.
+4. Flip `properPermissionConstants: true` and promote literal permissions to
+   constants.
+
+Every override is just a `parameters.drupalRules.<rule>: true` line in your own
+config, which takes precedence over the baseline default.
+
 ## Rules
 
 ### 1. `NoServiceLocatorInDIClassRule`
