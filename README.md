@@ -47,10 +47,13 @@ parameters:
         hookImplementationSignature: true
         noDeprecatedEntityApi: true
         noEntityQueryWithoutAccessCheck: true
+        properPermissionConstants: true
 ```
 
-You can also tune the DI-aware base class list and the set of forbidden
-`\Drupal::*` static methods — see `extension.neon` for the full set of knobs.
+You can also tune the DI-aware base class list, the set of forbidden
+`\Drupal::*` static methods, and the list of permission strings the
+`ProperPermissionConstantsRule` is allowed to ignore — see `extension.neon`
+for the full set of knobs.
 
 ## Rules
 
@@ -174,11 +177,44 @@ $ids = \Drupal::entityQuery('node')
     ->execute();
 ```
 
+### 5. `ProperPermissionConstantsRule`
+
+Permission machine names are an API contract between modules, but they are
+often scattered through controllers and access handlers as bare string
+literals — so renaming a permission silently leaves stale copies behind. The
+rule flags string literals passed to `->hasPermission()` (first argument) and
+`AccessResult::allowedIfHasPermission()` (second argument, per the core
+signature), and nudges you to promote them to a class constant or a
+`permissions.yml`-backed registry. Class constants pass through untouched, as
+does any permission listed in the configurable `allowedPermissionStrings`
+allowlist (a handful of stable core strings such as `access content` are
+rarely worth promoting).
+
+Bad:
+
+```php
+// ✗ Literal permission strings rot silently when the permission is renamed.
+$account->hasPermission('administer nodes');
+AccessResult::allowedIfHasPermission($account, 'administer users');
+```
+
+Good:
+
+```php
+final class NodePermissions {
+    public const ADMINISTER = 'administer nodes';
+}
+
+// ✓ Promoted to a class constant — refactor-safe and greppable.
+$account->hasPermission(NodePermissions::ADMINISTER);
+AccessResult::allowedIfHasPermission($account, NodePermissions::ADMINISTER);
+
+// ✓ Allowlisted stable core permission stays a literal.
+$account->hasPermission('access content');
+```
+
 ## Roadmap
 
-- `ProperPermissionConstantsRule` — flag literal permission strings passed to
-  `->hasPermission()` and `AccessResult::allowedIfHasPermission()`, encourage
-  promoting them to class constants or a `permissions.yml` registry.
 - A `baseline` neon shipping reasonable defaults for migrating projects.
 
 ## Contributing
