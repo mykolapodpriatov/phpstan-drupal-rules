@@ -5,6 +5,13 @@ parameters:
         hookImplementationSignature: true
         noDeprecatedEntityApi: true
         noEntityQueryWithoutAccessCheck: true
+        properPermissionConstants: true
+
+        # Permission machine names that are allowed to stay as string literals.
+        # A few stable core permissions are rarely renamed and not worth
+        # promoting to a constant.
+        allowedPermissionStrings:
+            - access content
 
         # Base classes that imply DI is wired up. Calling \Drupal::service()
         # from inside a subclass of one of these is considered a code smell.
@@ -35,6 +42,21 @@ parameters:
             - requestStack
             - languageManager
 
+# Declare the shape of the custom `drupalRules` parameter so PHPStan accepts it
+# when a project includes this extension (or the shipped baseline.neon) from its
+# own phpstan.neon.
+parametersSchema:
+    drupalRules: structure([
+        noServiceLocatorInDIClass: bool()
+        hookImplementationSignature: bool()
+        noDeprecatedEntityApi: bool()
+        noEntityQueryWithoutAccessCheck: bool()
+        properPermissionConstants: bool()
+        allowedPermissionStrings: listOf(string())
+        diBaseClasses: listOf(string())
+        forbiddenLocatorMethods: listOf(string())
+    ])
+
 services:
     -
         class: MykolaPodpriatov\PhpStanDrupalRules\Rules\NoServiceLocatorInDIClassRule
@@ -63,6 +85,14 @@ services:
         class: MykolaPodpriatov\PhpStanDrupalRules\Rules\NoEntityQueryWithoutAccessCheckRule
         arguments:
             enabled: %drupalRules.noEntityQueryWithoutAccessCheck%
+        tags:
+            - phpstan.rules.rule
+
+    -
+        class: MykolaPodpriatov\PhpStanDrupalRules\Rules\ProperPermissionConstantsRule
+        arguments:
+            allowedPermissions: %drupalRules.allowedPermissionStrings%
+            enabled: %drupalRules.properPermissionConstants%
         tags:
             - phpstan.rules.rule
 
