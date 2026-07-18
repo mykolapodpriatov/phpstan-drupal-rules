@@ -1,0 +1,8 @@
+# Test-only PHPStan config.
+#
+# Registers the global t() stub so the analyser recognises the procedural
+# translation helper the translation rules' fixtures call. Paths are resolved
+# relative to this file.
+parameters:
+    stubFiles:
+        - stubs/t.php
