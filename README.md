@@ -48,6 +48,7 @@ parameters:
         noDeprecatedEntityApi: true
         noEntityQueryWithoutAccessCheck: true
         properPermissionConstants: true
+        noGlobalTFunctionInClass: true
 ```
 
 You can also tune the DI-aware base class list, the set of forbidden
@@ -251,6 +252,40 @@ AccessResult::allowedIfHasPermission($account, NodePermissions::ADMINISTER);
 
 // ✓ Allowlisted stable core permission stays a literal.
 $account->hasPermission('access content');
+```
+
+### 6. `NoGlobalTFunctionInClassRule`
+
+Calling the procedural `t()` from inside a class hides a global dependency,
+makes the class harder to unit-test, and bypasses the DI-friendly translation
+plumbing. Inside a class, translate through `$this->t()` (from
+`StringTranslationTrait`) or an injected `TranslationInterface`. The rule fires
+only for a global `t()` call in a class scope — `$this->t()` is a method call,
+not a global function call, and bare `t()` in procedural `.module` code is left
+alone.
+
+Bad:
+
+```php
+final class ArticleController extends ControllerBase {
+    public function build(): array {
+        // ✗ Global t() inside a class.
+        return ['#title' => t('Welcome')];
+    }
+}
+```
+
+Good:
+
+```php
+final class ArticleController extends ControllerBase {
+    use StringTranslationTrait;
+
+    public function build(): array {
+        // ✓ Translatable and testable.
+        return ['#title' => $this->t('Welcome')];
+    }
+}
 ```
 
 ## Roadmap

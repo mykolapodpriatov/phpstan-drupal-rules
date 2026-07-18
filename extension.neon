@@ -6,6 +6,7 @@ parameters:
         noDeprecatedEntityApi: true
         noEntityQueryWithoutAccessCheck: true
         properPermissionConstants: true
+        noGlobalTFunctionInClass: true
 
         # Permission machine names that are allowed to stay as string literals.
         # A few stable core permissions are rarely renamed and not worth
@@ -52,6 +53,7 @@ parametersSchema:
         noDeprecatedEntityApi: bool()
         noEntityQueryWithoutAccessCheck: bool()
         properPermissionConstants: bool()
+        noGlobalTFunctionInClass: bool()
         allowedPermissionStrings: listOf(string())
         diBaseClasses: listOf(string())
         forbiddenLocatorMethods: listOf(string())
@@ -93,6 +95,13 @@ services:
         arguments:
             allowedPermissions: %drupalRules.allowedPermissionStrings%
             enabled: %drupalRules.properPermissionConstants%
+        tags:
+            - phpstan.rules.rule
+
+    -
+        class: MykolaPodpriatov\PhpStanDrupalRules\Rules\NoGlobalTFunctionInClassRule
+        arguments:
+            enabled: %drupalRules.noGlobalTFunctionInClass%
         tags:
             - phpstan.rules.rule
 
