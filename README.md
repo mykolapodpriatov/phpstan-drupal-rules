@@ -49,6 +49,7 @@ parameters:
         noEntityQueryWithoutAccessCheck: true
         properPermissionConstants: true
         noGlobalTFunctionInClass: true
+        noConcatenationInTranslatableString: true
 ```
 
 You can also tune the DI-aware base class list, the set of forbidden
@@ -286,6 +287,32 @@ final class ArticleController extends ControllerBase {
         return ['#title' => $this->t('Welcome')];
     }
 }
+```
+
+### 7. `NoConcatenationInTranslatableStringRule`
+
+The translation extractor treats the literal first argument of `t()` as the
+source string, so concatenating a value into it (`'Hello ' . $name`) produces a
+run-time string the extractor never sees — the message silently drops out of
+every `.po` file. Keep a single static source string and pass dynamic values as
+placeholders (`@var`, `%var`, `:var`) through the second argument. Mirrors the
+Drupal Coder sniff `Drupal.Semantics.FunctionT.Concat`. The rule fires when the
+first argument of `t(...)` or `$this->t(...)` is a concatenation.
+
+Bad:
+
+```php
+// ✗ Concatenation — the source string can never be extracted or translated.
+$this->t('Hello ' . $name);
+t('Goodbye ' . $name);
+```
+
+Good:
+
+```php
+// ✓ Static source string, dynamic value as a placeholder.
+$this->t('Hello @name', ['@name' => $name]);
+t('Goodbye @name', ['@name' => $name]);
 ```
 
 ## Roadmap
