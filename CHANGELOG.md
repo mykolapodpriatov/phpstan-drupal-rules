@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- `NoEntityQueryWithoutAccessCheckRule` now flags `->execute()` when a query assigned from `entityQuery()` / `getQuery()` is built across multiple statements and never calls `accessCheck()`.
+
 ## [0.1.0] - 2026-06-22
 
 ### Added

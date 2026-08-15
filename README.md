@@ -197,9 +197,10 @@ $node = \Drupal::entityTypeManager()->getStorage('node')->load(42);
 ### 4. `NoEntityQueryWithoutAccessCheckRule`
 
 Since Drupal 10 the entity query API throws if you do not state your access
-check decision explicitly. The rule walks the method chain originating at
-`\Drupal::entityQuery(...)` or `$storage->getQuery()` and reports if no
-`accessCheck()` call appears anywhere in the chain.
+check decision explicitly. The rule reports a missing `accessCheck()` on a
+fluent chain originating at `\Drupal::entityQuery(...)` or
+`$storage->getQuery()`, and on a query variable assigned from those APIs and
+later `->execute()`d across separate statements in the same function.
 
 Bad:
 
@@ -208,6 +209,11 @@ Bad:
 $ids = \Drupal::entityQuery('node')
     ->condition('status', 1)
     ->execute();
+
+// ✗ Same bug: query built across statements, accessCheck never called.
+$query = \Drupal::entityQuery('node');
+$query->condition('status', 1);
+$ids = $query->execute();
 ```
 
 Good:
@@ -217,6 +223,11 @@ $ids = \Drupal::entityQuery('node')
     ->accessCheck(TRUE)
     ->condition('status', 1)
     ->execute();
+
+$query = \Drupal::entityQuery('node');
+$query->accessCheck(TRUE);
+$query->condition('status', 1);
+$ids = $query->execute();
 ```
 
 ### 5. `ProperPermissionConstantsRule`

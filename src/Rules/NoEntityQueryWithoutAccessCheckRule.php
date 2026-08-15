@@ -6,10 +6,14 @@ namespace MykolaPodpriatov\PhpStanDrupalRules\Rules;
 
 use MykolaPodpriatov\PhpStanDrupalRules\NodeVisitor\ChainParentVisitor;
 use PhpParser\Node;
+use PhpParser\Node\Expr\Assign;
 use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\StaticCall;
+use PhpParser\Node\Expr\Variable;
+use PhpParser\Node\FunctionLike;
 use PhpParser\Node\Identifier;
 use PHPStan\Analyser\Scope;
+use PHPStan\Rules\IdentifierRuleError;
 use PHPStan\Rules\Rule;
 use PHPStan\Rules\RuleErrorBuilder;
 
@@ -29,6 +33,12 @@ use PHPStan\Rules\RuleErrorBuilder;
  *  `entityQuery()` (a static call on \Drupal) or `getQuery()` (called on an
  *  entity storage), and the chain does not contain `accessCheck`, we report.
  *
+ *  Queries are also often assigned to a variable and extended across later
+ *  statements. For a tail `->execute()` whose receiver is such a variable, we
+ *  walk the enclosing function/method and track the last assignment from
+ *  `entityQuery()` / `getQuery()`. If no `accessCheck()` was seen on that
+ *  variable after that assignment, we report on the `->execute()` call.
+ *
  * @implements Rule<MethodCall>
  */
 final class NoEntityQueryWithoutAccessCheckRule implements Rule
@@ -46,7 +56,7 @@ final class NoEntityQueryWithoutAccessCheckRule implements Rule
     /**
      * @param MethodCall $node
      *
-     * @return list<\PHPStan\Rules\IdentifierRuleError>
+     * @return list<IdentifierRuleError>
      */
     public function processNode(Node $node, Scope $scope): array
     {
@@ -64,22 +74,30 @@ final class NoEntityQueryWithoutAccessCheckRule implements Rule
         $methods = $this->collectChainMethodNames($node);
         $root = $this->chainRoot($node);
 
-        if (!$this->isEntityQueryRoot($root, $methods)) {
-            return [];
+        if ($this->isEntityQueryRoot($root, $methods)) {
+            if (in_array('accessCheck', $methods, true)) {
+                return [];
+            }
+
+            // Bare getQuery() / an assigned fluent prefix without execute() is
+            // the start of a multi-statement query. Report on ->execute() later
+            // instead of treating the constructor call as a finished chain.
+            if (!$this->shouldDeferToVariableTracking($node, $methods)) {
+                return [$this->missingAccessCheckError($node)];
+            }
         }
 
-        if (in_array('accessCheck', $methods, true)) {
-            return [];
+        if (
+            $root instanceof Variable
+            && is_string($root->name)
+            && in_array('execute', $methods, true)
+            && !in_array('accessCheck', $methods, true)
+            && $this->assignedQueryMissingAccessCheck($node, $root->name)
+        ) {
+            return [$this->missingAccessCheckError($node)];
         }
 
-        return [
-            RuleErrorBuilder::message(
-                'Entity query is missing an explicit ->accessCheck(TRUE|FALSE). Drupal 10+ requires an explicit access-check decision on every entity query.',
-            )
-                ->identifier('drupalRules.noEntityQueryWithoutAccessCheck')
-                ->line($node->getStartLine())
-                ->build(),
-        ];
+        return [];
     }
 
     /**
@@ -140,5 +158,207 @@ final class NoEntityQueryWithoutAccessCheckRule implements Rule
         }
 
         return false;
+    }
+
+    /**
+     * True when this tail is query construction that may still get accessCheck()
+     * on a later statement against the assigned variable.
+     *
+     * @param list<string> $methods
+     */
+    private function shouldDeferToVariableTracking(MethodCall $node, array $methods): bool
+    {
+        if ($methods === ['getQuery']) {
+            return true;
+        }
+        if (in_array('execute', $methods, true)) {
+            return false;
+        }
+        $parent = $node->getAttribute(ChainParentVisitor::ATTRIBUTE);
+
+        return $parent instanceof Assign
+            && $parent->expr === $node
+            && $parent->var instanceof Variable;
+    }
+
+    /**
+     * Whether $varName was assigned from entityQuery()/getQuery() in this
+     * function and never received accessCheck() before $execute.
+     */
+    private function assignedQueryMissingAccessCheck(MethodCall $execute, string $varName): bool
+    {
+        $function = $this->enclosingFunction($execute);
+        if ($function === null) {
+            return false;
+        }
+
+        $isQuery = false;
+        $hasAccessCheck = false;
+        $shouldReport = false;
+
+        $this->walkChildNodes(
+            $function,
+            function (Node $node) use ($execute, $varName, &$isQuery, &$hasAccessCheck, &$shouldReport): bool {
+                if ($node instanceof Assign) {
+                    $this->applyAssignment($node, $varName, $isQuery, $hasAccessCheck);
+                }
+
+                if (!$node instanceof MethodCall) {
+                    return false;
+                }
+
+                if ($this->isAccessCheckOnVariable($node, $varName)) {
+                    $hasAccessCheck = true;
+                }
+
+                if ($node !== $execute) {
+                    return false;
+                }
+
+                $shouldReport = $isQuery && !$hasAccessCheck;
+
+                return true;
+            },
+        );
+
+        return $shouldReport;
+    }
+
+    /**
+     * Update query-tracking state for an assignment to $varName.
+     */
+    private function applyAssignment(
+        Assign $assign,
+        string $varName,
+        bool &$isQuery,
+        bool &$hasAccessCheck,
+    ): void {
+        if (!$assign->var instanceof Variable || !is_string($assign->var->name) || $assign->var->name !== $varName) {
+            return;
+        }
+
+        if ($this->exprIsEntityQuery($assign->expr)) {
+            $isQuery = true;
+            $hasAccessCheck = $this->exprChainHasAccessCheck($assign->expr);
+            return;
+        }
+
+        if ($assign->expr instanceof MethodCall && $this->chainRootVariableName($assign->expr) === $varName) {
+            if ($this->exprChainHasAccessCheck($assign->expr)) {
+                $hasAccessCheck = true;
+            }
+            return;
+        }
+
+        $isQuery = false;
+        $hasAccessCheck = false;
+    }
+
+    private function exprIsEntityQuery(Node $expr): bool
+    {
+        if ($expr instanceof StaticCall
+            && $expr->name instanceof Identifier
+            && $expr->name->toString() === 'entityQuery'
+        ) {
+            return true;
+        }
+
+        if (!$expr instanceof MethodCall) {
+            return false;
+        }
+
+        return $this->isEntityQueryRoot($this->chainRoot($expr), $this->collectChainMethodNames($expr));
+    }
+
+    private function exprChainHasAccessCheck(Node $expr): bool
+    {
+        return $expr instanceof MethodCall
+            && in_array('accessCheck', $this->collectChainMethodNames($expr), true);
+    }
+
+    private function isAccessCheckOnVariable(MethodCall $node, string $varName): bool
+    {
+        return $node->name instanceof Identifier
+            && $node->name->toString() === 'accessCheck'
+            && $this->chainRootVariableName($node) === $varName;
+    }
+
+    private function chainRootVariableName(MethodCall $node): ?string
+    {
+        $root = $this->chainRoot($node);
+        if ($root instanceof Variable && is_string($root->name)) {
+            return $root->name;
+        }
+
+        return null;
+    }
+
+    private function enclosingFunction(Node $node): ?FunctionLike
+    {
+        $current = $node;
+        while (true) {
+            $parent = $current->getAttribute(ChainParentVisitor::ATTRIBUTE);
+            if (!$parent instanceof Node) {
+                return null;
+            }
+            if ($parent instanceof FunctionLike) {
+                return $parent;
+            }
+            $current = $parent;
+        }
+    }
+
+    /**
+     * Pre-order walk of $node's descendants. Nested functions are skipped.
+     *
+     * @param callable(Node): bool $enter Return true to stop walking.
+     */
+    private function walkChildNodes(Node $node, callable $enter): bool
+    {
+        foreach ($node->getSubNodeNames() as $name) {
+            /** @var mixed $sub */
+            $sub = $node->{$name};
+            if ($sub instanceof Node) {
+                if ($this->visit($sub, $enter)) {
+                    return true;
+                }
+                continue;
+            }
+            if (!is_array($sub)) {
+                continue;
+            }
+            foreach ($sub as $item) {
+                if ($item instanceof Node && $this->visit($item, $enter)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param callable(Node): bool $enter
+     */
+    private function visit(Node $node, callable $enter): bool
+    {
+        if ($node instanceof FunctionLike) {
+            return false;
+        }
+        if ($enter($node)) {
+            return true;
+        }
+
+        return $this->walkChildNodes($node, $enter);
+    }
+
+    private function missingAccessCheckError(MethodCall $node): IdentifierRuleError
+    {
+        return RuleErrorBuilder::message(
+            'Entity query is missing an explicit ->accessCheck(TRUE|FALSE). Drupal 10+ requires an explicit access-check decision on every entity query.',
+        )
+            ->identifier('drupalRules.noEntityQueryWithoutAccessCheck')
+            ->line($node->getStartLine())
+            ->build();
     }
 }
