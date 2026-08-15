@@ -54,4 +54,37 @@ final class NoEntityQueryWithoutAccessCheckRuleTest extends RuleTestCase
         );
     }
 
+    public function testMultiStatementMissingAccessCheckIsFlagged(): void
+    {
+        $this->analyse(
+            [__DIR__ . '/data/NoEntityQueryWithoutAccessCheckRule/multi-statement-missing-access-check.php'],
+            [
+                [
+                    'Entity query is missing an explicit ->accessCheck(TRUE|FALSE). Drupal 10+ requires an explicit access-check decision on every entity query.',
+                    15,
+                ],
+                [
+                    'Entity query is missing an explicit ->accessCheck(TRUE|FALSE). Drupal 10+ requires an explicit access-check decision on every entity query.',
+                    21,
+                ],
+            ],
+        );
+    }
+
+    public function testMultiStatementExplicitAccessCheckIsAccepted(): void
+    {
+        $this->analyse(
+            [__DIR__ . '/data/NoEntityQueryWithoutAccessCheckRule/multi-statement-with-access-check.php'],
+            [],
+        );
+    }
+
+    public function testReassignedQueryVariableIsNotFlagged(): void
+    {
+        $this->analyse(
+            [__DIR__ . '/data/NoEntityQueryWithoutAccessCheckRule/query-variable-reassigned.php'],
+            [],
+        );
+    }
+
 }
