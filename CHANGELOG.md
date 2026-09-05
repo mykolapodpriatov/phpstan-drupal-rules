@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `NoUnescapedMarkupRule`: flags a non-literal, unescaped value in `#markup`,
+  `#prefix` or `#suffix`. Those keys are filtered with `Xss::filterAdmin()`, so
+  the admin tag whitelist applies and editable content placed there can inject
+  markup. Literals, configured sanitisers (`safeMarkupCallables`) and values
+  already typed as `MarkupInterface` pass; an array declaring `#allowed_tags`
+  is left alone. Off in `baseline.neon` and last in the adoption sequence,
+  because it is the highest-volume rule in the package on a legacy codebase.
+
 ### Fixed
 - `NoEntityQueryWithoutAccessCheckRule` now flags `->execute()` when a query assigned from `entityQuery()` / `getQuery()` is built across multiple statements and never calls `accessCheck()`.
 
