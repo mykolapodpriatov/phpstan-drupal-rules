@@ -39,3 +39,9 @@ parameters:
         # correctness fix; keep it off for the initial migration and turn it on
         # alongside step 2/3 when you are ready to tidy access checks.
         properPermissionConstants: false
+        # Step 4: unescaped #markup. Each hit is a genuine XSS surface, but on
+        # a legacy codebase this is the highest-volume rule in the package and
+        # would bury the four steps above. Enable it once they are clean, then
+        # work through the findings deliberately: the fix is a decision about
+        # each value, not a mechanical rewrite.
+        noUnescapedMarkup: false

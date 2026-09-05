@@ -50,12 +50,13 @@ parameters:
         properPermissionConstants: true
         noGlobalTFunctionInClass: true
         noConcatenationInTranslatableString: true
+        noUnescapedMarkup: true
 ```
 
 You can also tune the DI-aware base class list, the set of forbidden
-`\Drupal::*` static methods, and the list of permission strings the
-`ProperPermissionConstantsRule` is allowed to ignore — see `extension.neon`
-for the full set of knobs.
+`\Drupal::*` static methods, the list of permission strings the
+`ProperPermissionConstantsRule` is allowed to ignore, and the sanitisers
+`NoUnescapedMarkupRule` trusts. See `extension.neon` for the full set of knobs.
 
 ## Gradual adoption
 
@@ -85,6 +86,7 @@ parameters:
 | `noServiceLocatorInDIClass` | off | DI hygiene — higher volume and more opinionated. |
 | `hookImplementationSignature` | off | Signature drift — enable once hooks are audited. |
 | `properPermissionConstants` | off | Code-quality nudge rather than a correctness fix. |
+| `noUnescapedMarkup` | off | Real XSS surface, but the highest-volume rule here; enable last. |
 
 Recommended sequence — get each step to green before moving on:
 
@@ -93,6 +95,9 @@ Recommended sequence — get each step to green before moving on:
 3. Flip `hookImplementationSignature: true` and fix the hook signatures.
 4. Flip `properPermissionConstants: true` and promote literal permissions to
    constants.
+5. Flip `noUnescapedMarkup: true` and work through the filtered render-array
+   keys. Leave this until last: it is the only rule whose findings need a
+   decision per value rather than a mechanical fix.
 
 Every override is just a `parameters.drupalRules.<rule>: true` line in your own
 config, which takes precedence over the baseline default.
@@ -326,9 +331,63 @@ $this->t('Hello @name', ['@name' => $name]);
 t('Goodbye @name', ['@name' => $name]);
 ```
 
+### 8. `NoUnescapedMarkupRule`
+
+`#markup`, `#prefix` and `#suffix` are filtered with `Xss::filterAdmin()`, not
+`Xss::filter()`. The admin tag whitelist applies, so `<a href>`, `<img src>`,
+`<style>` and `<form>` all survive. Anything editable that reaches one of those
+keys hands whoever can edit it the ability to put markup on the page.
+
+The rule fires unless the value is provably safe: a string literal (or a
+concatenation of literals), a call to a configured sanitiser
+(`parameters.drupalRules.safeMarkupCallables`), or a value the type system
+already knows is `MarkupInterface`. An interpolated string is not safe, because
+the interpolated part is exactly the problem.
+
+Bad:
+
+```php
+public function build(NodeInterface $node): array {
+    // ✗ Rule fires: a field value straight into a filtered key.
+    return ['#markup' => $node->get('field_bio')->value];
+}
+```
+
+Good:
+
+```php
+public function build(NodeInterface $node): array {
+    // ✓ #plain_text escapes wholesale; use it whenever the value is text.
+    return ['#plain_text' => $node->get('field_bio')->value];
+}
+```
+
+Also good, when the value really is markup and you have decided which tags to
+allow:
+
+```php
+return [
+    '#markup' => Xss::filter($node->get('field_bio')->value, ['em', 'strong']),
+];
+```
+
+Two escape hatches, both deliberate:
+
+- An array that also declares `#allowed_tags` is left alone. That property only
+  exists because someone thought about the whitelist.
+- `safeMarkupCallables` is configurable, so your own sanitiser wrappers can be
+  trusted. Entries take three forms: `funcName`, `Fully\Qualified\Class::method`,
+  and `->method` for an instance method matched by name.
+
+This is the highest-volume rule in the package on a legacy codebase, so
+`baseline.neon` leaves it **off** and the adoption sequence puts it last. Each
+finding is a decision about one value rather than a mechanical rewrite, and a
+rule that buries the other seven is a rule that gets the package uninstalled.
+
 ## Roadmap
 
-- A `baseline` neon shipping reasonable defaults for migrating projects.
+Nothing outstanding. `baseline.neon` shipped, and every rule has an individual
+toggle plus a documented place in the adoption sequence.
 
 ## Contributing
 

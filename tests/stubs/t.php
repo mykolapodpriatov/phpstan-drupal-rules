@@ -14,3 +14,14 @@ function t(string $string, array $args = [], array $options = []): string
 {
     return $string;
 }
+
+/**
+ * Test-only stub of Drupal's global check_markup().
+ *
+ * Registered alongside t() so the NoUnescapedMarkupRule fixtures can call the
+ * text-format filter the rule trusts.
+ */
+function check_markup(string $text, ?string $format_id = null): string
+{
+    return $text;
+}

@@ -8,6 +8,22 @@ parameters:
         properPermissionConstants: true
         noGlobalTFunctionInClass: true
         noConcatenationInTranslatableString: true
+        noUnescapedMarkup: true
+
+        # Calls whose return value is trusted in #markup / #prefix / #suffix.
+        # Three forms: `funcName`, `Fully\Qualified\Class::method`, and
+        # `->method` for an instance method matched by name. Add your project's
+        # own sanitiser wrappers here.
+        safeMarkupCallables:
+            - t
+            - check_markup
+            - '->t'
+            - '->formatPlural'
+            - Drupal\Component\Utility\Xss::filter
+            - Drupal\Component\Utility\Xss::filterAdmin
+            - Drupal\Component\Utility\Html::escape
+            - Drupal\Core\Render\Markup::create
+            - Drupal\Core\Render\Markup::fromObject
 
         # Permission machine names that are allowed to stay as string literals.
         # A few stable core permissions are rarely renamed and not worth
@@ -56,6 +72,8 @@ parametersSchema:
         properPermissionConstants: bool()
         noGlobalTFunctionInClass: bool()
         noConcatenationInTranslatableString: bool()
+        noUnescapedMarkup: bool()
+        safeMarkupCallables: listOf(string())
         allowedPermissionStrings: listOf(string())
         diBaseClasses: listOf(string())
         forbiddenLocatorMethods: listOf(string())
@@ -111,6 +129,14 @@ services:
         class: MykolaPodpriatov\PhpStanDrupalRules\Rules\NoConcatenationInTranslatableStringRule
         arguments:
             enabled: %drupalRules.noConcatenationInTranslatableString%
+        tags:
+            - phpstan.rules.rule
+
+    -
+        class: MykolaPodpriatov\PhpStanDrupalRules\Rules\NoUnescapedMarkupRule
+        arguments:
+            safeMarkupCallables: %drupalRules.safeMarkupCallables%
+            enabled: %drupalRules.noUnescapedMarkup%
         tags:
             - phpstan.rules.rule
 
