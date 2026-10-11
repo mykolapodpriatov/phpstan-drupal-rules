@@ -154,7 +154,46 @@ final class NoEntityQueryWithoutAccessCheckRule implements Rule
         }
 
         if ($methods !== [] && end($methods) === 'getQuery') {
+            return $this->chainLooksLikeEntityQuery($methods);
+        }
+
+        return false;
+    }
+
+    /**
+     * A getQuery() chain is an entity query, or a request query bag.
+     *
+     * Symfony's Request::getQuery() is also named getQuery(). A chain that
+     * only calls bag methods (get, has, all) is that bag. A bare getQuery()
+     * stays an entity query so a later ->execute() on the variable is still
+     * checked. condition, execute, accessCheck and the other query methods
+     * are not on the bag.
+     *
+     * @param list<string> $methods
+     */
+    private function chainLooksLikeEntityQuery(array $methods): bool
+    {
+        if ($methods === ['getQuery']) {
             return true;
+        }
+
+        $entityMethods = [
+            'accessCheck',
+            'condition',
+            'execute',
+            'range',
+            'sort',
+            'exists',
+            'notExists',
+            'pager',
+            'latestRevision',
+            'currentRevision',
+            'allRevisions',
+        ];
+        foreach ($methods as $name) {
+            if (in_array($name, $entityMethods, true)) {
+                return true;
+            }
         }
 
         return false;
