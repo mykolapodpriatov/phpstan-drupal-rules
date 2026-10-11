@@ -79,6 +79,14 @@ final class NoEntityQueryWithoutAccessCheckRuleTest extends RuleTestCase
         );
     }
 
+    public function testRequestQueryBagIsNotFlagged(): void
+    {
+        $this->analyse(
+            [__DIR__ . '/data/NoEntityQueryWithoutAccessCheckRule/request-query-bag.php'],
+            [],
+        );
+    }
+
     public function testReassignedQueryVariableIsNotFlagged(): void
     {
         $this->analyse(
