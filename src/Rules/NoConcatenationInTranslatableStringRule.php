@@ -10,6 +10,7 @@ use PhpParser\Node\Expr\FuncCall;
 use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Identifier;
 use PhpParser\Node\Name;
+use PhpParser\Node\Scalar\InterpolatedString;
 use PHPStan\Analyser\Scope;
 use PHPStan\Rules\Rule;
 use PHPStan\Rules\RuleErrorBuilder;
@@ -26,7 +27,8 @@ use PHPStan\Rules\RuleErrorBuilder;
  *
  * Mirrors the Drupal Coder sniff `Drupal.Semantics.FunctionT.Concat`. The rule
  * fires when the first argument of a global `t(...)` call or a `$this->t(...)`
- * method call is a `Concat` expression.
+ * method call is a `Concat` expression or an interpolated string
+ * (`"Hello $name"`, `"Hello {$name}"`). Both are invisible to the extractor.
  *
  * @implements Rule<Node>
  */
@@ -80,7 +82,7 @@ final class NoConcatenationInTranslatableStringRule implements Rule
     }
 
     /**
-     * Report when the first argument of the call is a concatenation.
+     * Report when the first argument is not a static source string.
      *
      * @param FuncCall|MethodCall $node
      *
@@ -93,13 +95,19 @@ final class NoConcatenationInTranslatableStringRule implements Rule
             return [];
         }
 
-        if (!$args[0]->value instanceof Concat) {
+        $value = $args[0]->value;
+        $isConcat = $value instanceof Concat;
+        $isInterpolated = $value instanceof InterpolatedString;
+        if (!$isConcat && !$isInterpolated) {
             return [];
         }
 
+        $problem = $isInterpolated ? 'An interpolated string' : 'Concatenation';
+
         return [
             RuleErrorBuilder::message(sprintf(
-                'Concatenation in the first argument of %s breaks translation string extraction. Use a single source string with placeholders (@var, %%var, :var) and pass the values in the second argument.',
+                '%s in the first argument of %s breaks translation string extraction. Use a single source string with placeholders (@var, %%var, :var) and pass the values in the second argument.',
+                $problem,
                 $context,
             ))
                 ->identifier('drupalRules.noConcatenationInTranslatableString')

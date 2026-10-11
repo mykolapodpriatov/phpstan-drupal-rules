@@ -46,6 +46,23 @@ final class NoConcatenationInTranslatableStringRuleTest extends RuleTestCase
         );
     }
 
+    public function testInterpolatedStringIsFlagged(): void
+    {
+        $this->analyse(
+            [__DIR__ . '/data/NoConcatenationInTranslatableStringRule/interpolated-string.php'],
+            [
+                [
+                    'An interpolated string in the first argument of $this->t() breaks translation string extraction. Use a single source string with placeholders (@var, %var, :var) and pass the values in the second argument.',
+                    20,
+                ],
+                [
+                    'An interpolated string in the first argument of t() breaks translation string extraction. Use a single source string with placeholders (@var, %var, :var) and pass the values in the second argument.',
+                    26,
+                ],
+            ],
+        );
+    }
+
     public function testPlaceholderArgumentsAreSilent(): void
     {
         $this->analyse(
